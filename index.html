@@ -11,64 +11,33 @@
         href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@400;600&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" href="favicon.png">
 </head>
 
 <body>
     <div class="container">
-        <header>
-            <h1 class="title">PONG</h1>
-            <p class="subtitle">Classic Arcade Action</p>
-        </header>
+        <!-- Header removed -->
 
         <div class="game-wrapper">
+            <!-- Game Interface (Score & Controls) -->
+            <div class="game-interface">
+                <div class="score-box player">
+                    <span class="label">PLAYER</span>
+                    <span id="playerScore" class="value">0</span>
+                </div>
+
+                <button id="controlButton" class="control-btn">START</button>
+
+                <div class="score-box ai">
+                    <span class="label">AI</span>
+                    <span id="aiScore" class="value">0</span>
+                </div>
+            </div>
+
             <canvas id="gameCanvas"></canvas>
-
-            <!-- Game Overlays -->
-            <div id="startScreen" class="overlay">
-                <div class="overlay-content">
-                    <h2 class="glow-text">PONG</h2>
-                    <p class="instructions">Use <kbd>W</kbd> / <kbd>S</kbd> to move</p>
-                    <p class="instructions mobile-only">Tap and drag to move paddle</p>
-                    <button id="startButton" class="game-button">START GAME</button>
-                    <div class="controls-info">
-                        <p><kbd>SPACE</kbd> - Pause/Resume</p>
-                        <p><kbd>R</kbd> - Restart</p>
-                    </div>
-                </div>
-            </div>
-
-            <div id="pauseScreen" class="overlay hidden">
-                <div class="overlay-content">
-                    <h2>PAUSED</h2>
-                    <p>Press <kbd>SPACE</kbd> to resume</p>
-                    <button id="resumeButton" class="game-button">RESUME</button>
-                </div>
-            </div>
-
-            <div id="gameOverScreen" class="overlay hidden">
-                <div class="overlay-content">
-                    <h2 id="winnerText" class="glow-text">GAME OVER</h2>
-                    <p id="finalScore" class="score-display"></p>
-                    <button id="restartButton" class="game-button">PLAY AGAIN</button>
-                </div>
-            </div>
-
-            <!-- Score Display -->
-            <div id="scoreDisplay" class="score-hud hidden">
-                <div class="player-score">
-                    <span class="score-label">PLAYER</span>
-                    <span id="playerScore" class="score-value">0</span>
-                </div>
-                <div class="ai-score">
-                    <span class="score-label">AI</span>
-                    <span id="aiScore" class="score-value">0</span>
-                </div>
-            </div>
         </div>
 
-        <footer>
-            <p>&copy; 2025 Modern Pong | Built with HTML5 Canvas & JavaScript</p>
-        </footer>
+        <!-- Footer removed -->
     </div>
 
     <script src="game.js"></script>

@@ -1,19 +1,20 @@
 // ===== Game Configuration =====
 const CONFIG = {
     canvas: {
-        width: 900,
-        height: 600
+        width: window.innerWidth,
+        height: window.innerHeight - 80 // Approximate header height
     },
     paddle: {
         width: 15,
         height: 100,
         speed: 8,
-        aiSpeed: 4  // Reduced from 6 to make AI slower
+        aiSpeed: 4
     },
+    // ... (rest of config unchanged until game objects)
     ai: {
-        reactionDelay: 150,  // milliseconds before AI reacts
-        errorMargin: 35,     // pixels of prediction error
-        trackingDeadZone: 40 // pixels where AI won't move
+        reactionDelay: 150,
+        errorMargin: 35,
+        trackingDeadZone: 40
     },
     ball: {
         size: 12,
@@ -33,21 +34,35 @@ const CONFIG = {
     }
 };
 
-// ===== Game State =====
-const gameState = {
-    current: 'start', // 'start', 'playing', 'paused', 'gameOver'
-    playerScore: 0,
-    aiScore: 0
-};
+// ...
 
 // ===== Canvas Setup =====
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
-// Set canvas size
-canvas.width = CONFIG.canvas.width;
-canvas.height = CONFIG.canvas.height;
+function resizeCanvas() {
+    // 1. Get the layout size (CSS size)
+    // We need to ensure the canvas attributes match the CSS size to avoid scaling 
+    // and to ensure the coordinate system matches the visible area.
+    const rect = canvas.getBoundingClientRect();
 
+    canvas.width = rect.width;
+    canvas.height = rect.height;
+
+    CONFIG.canvas.width = canvas.width;
+    CONFIG.canvas.height = canvas.height;
+
+    // Reposition AI on resize
+    ai.x = CONFIG.canvas.width - 30 - CONFIG.paddle.width;
+    ai.y = Math.min(ai.y, CONFIG.canvas.height - ai.height);
+    player.y = Math.min(player.y, CONFIG.canvas.height - player.height);
+}
+
+window.addEventListener('resize', resizeCanvas);
+// Initial resize called in init
+
+
+// ===== Game Objects =====
 // ===== Game Objects =====
 const player = {
     x: 30,
@@ -60,6 +75,7 @@ const player = {
 
 const ai = {
     x: CONFIG.canvas.width - 30 - CONFIG.paddle.width,
+    // ... rest initialized in resize or loop
     y: CONFIG.canvas.height / 2 - CONFIG.paddle.height / 2,
     width: CONFIG.paddle.width,
     height: CONFIG.paddle.height,
@@ -77,6 +93,13 @@ const ball = {
     dy: CONFIG.ball.initialSpeed,
     speed: CONFIG.ball.initialSpeed,
     trail: []
+};
+
+// ===== Game State =====
+const gameState = {
+    current: 'start', // 'start', 'playing', 'paused', 'gameOver'
+    playerScore: 0,
+    aiScore: 0
 };
 
 // ===== Particles System =====
@@ -139,18 +162,15 @@ const keys = {};
 window.addEventListener('keydown', (e) => {
     keys[e.key.toLowerCase()] = true;
 
-    // Handle game state changes
-    if (e.key === ' ') {
+    // Handle game state changes (Button shortcuts)
+    if (e.key === ' ' || e.key === 'Enter') {
         e.preventDefault();
-        if (gameState.current === 'playing') {
-            pauseGame();
-        } else if (gameState.current === 'paused') {
-            resumeGame();
-        }
+        handleControlClick();
     }
 
     if (e.key.toLowerCase() === 'r') {
         restartGame();
+        controlButton.textContent = 'PAUSE'; // Ensure button updates if R is used
     }
 });
 
@@ -186,42 +206,57 @@ canvas.addEventListener('touchend', () => {
 });
 
 // ===== UI Elements =====
-const startScreen = document.getElementById('startScreen');
-const pauseScreen = document.getElementById('pauseScreen');
-const gameOverScreen = document.getElementById('gameOverScreen');
-const scoreDisplay = document.getElementById('scoreDisplay');
-
-const startButton = document.getElementById('startButton');
-const resumeButton = document.getElementById('resumeButton');
-const restartButton = document.getElementById('restartButton');
-
+const controlButton = document.getElementById('controlButton');
 const playerScoreEl = document.getElementById('playerScore');
 const aiScoreEl = document.getElementById('aiScore');
-const winnerText = document.getElementById('winnerText');
-const finalScore = document.getElementById('finalScore');
+
 
 // ===== Button Event Listeners =====
-startButton.addEventListener('click', startGame);
-resumeButton.addEventListener('click', resumeGame);
-restartButton.addEventListener('click', restartGame);
+controlButton.addEventListener('click', handleControlClick);
+
+function handleControlClick() {
+    try {
+        if (controlButton) controlButton.blur();
+        if (audioContext && audioContext.state === 'suspended') {
+            audioContext.resume();
+        }
+
+        switch (gameState.current) {
+            case 'start':
+                startGame();
+                controlButton.textContent = 'PAUSE';
+                break;
+            case 'playing':
+                pauseGame();
+                controlButton.textContent = 'RESUME';
+                break;
+            case 'paused':
+                resumeGame();
+                controlButton.textContent = 'PAUSE';
+                break;
+            case 'gameOver':
+                restartGame();
+                controlButton.textContent = 'PAUSE';
+                break;
+        }
+    } catch (error) {
+        console.error("Game Control Error:", error);
+    }
+}
 
 // ===== Game Functions =====
 function startGame() {
     gameState.current = 'playing';
-    startScreen.classList.add('hidden');
-    scoreDisplay.classList.remove('hidden');
     resetBall();
     gameLoop();
 }
 
 function pauseGame() {
     gameState.current = 'paused';
-    pauseScreen.classList.remove('hidden');
 }
 
 function resumeGame() {
     gameState.current = 'playing';
-    pauseScreen.classList.add('hidden');
     gameLoop();
 }
 
@@ -229,43 +264,26 @@ function restartGame() {
     gameState.current = 'start';
     gameState.playerScore = 0;
     gameState.aiScore = 0;
-    updateScoreDisplay();
 
+    // Reset positions
     player.y = CONFIG.canvas.height / 2 - CONFIG.paddle.height / 2;
     ai.y = CONFIG.canvas.height / 2 - CONFIG.paddle.height / 2;
 
-    gameOverScreen.classList.add('hidden');
-    pauseScreen.classList.add('hidden');
-    startScreen.classList.remove('hidden');
-    scoreDisplay.classList.add('hidden');
-
     particles.length = 0;
     ball.trail.length = 0;
+
+    // Auto start
+    startGame();
 }
 
 function gameOver(winner) {
     gameState.current = 'gameOver';
-    gameOverScreen.classList.remove('hidden');
+    controlButton.textContent = 'RESTART';
 
-    if (winner === 'player') {
-        winnerText.textContent = 'YOU WIN!';
-        winnerText.style.background = 'linear-gradient(135deg, #00d9ff, #00ff88)';
-        winnerText.style.webkitBackgroundClip = 'text';
-        winnerText.style.webkitTextFillColor = 'transparent';
-        playSound(523, 0.2);
-        setTimeout(() => playSound(659, 0.2), 100);
-        setTimeout(() => playSound(784, 0.3), 200);
-    } else {
-        winnerText.textContent = 'AI WINS!';
-        winnerText.style.background = 'linear-gradient(135deg, #ff006e, #ff4d00)';
-        winnerText.style.webkitBackgroundClip = 'text';
-        winnerText.style.webkitTextFillColor = 'transparent';
-        playSound(392, 0.2);
-        setTimeout(() => playSound(330, 0.2), 100);
-        setTimeout(() => playSound(262, 0.3), 200);
-    }
-
-    finalScore.textContent = `Final Score: ${gameState.playerScore} - ${gameState.aiScore}`;
+    // Optional: Draw simple game over text on canvas since overlays are gone
+    setTimeout(() => {
+        draw(); // Force a redraw to show the "Game Over" text
+    }, 100);
 }
 
 function resetBall() {
@@ -284,8 +302,10 @@ function resetBall() {
 }
 
 function updateScoreDisplay() {
-    playerScoreEl.textContent = gameState.playerScore;
-    aiScoreEl.textContent = gameState.aiScore;
+    if (playerScoreEl && aiScoreEl) {
+        playerScoreEl.textContent = gameState.playerScore;
+        aiScoreEl.textContent = gameState.aiScore;
+    }
 }
 
 // ===== Update Functions =====
@@ -506,6 +526,8 @@ function drawParticles() {
     particles.forEach(particle => particle.draw());
 }
 
+
+
 function draw() {
     // Clear canvas with gradient background
     const gradient = ctx.createLinearGradient(0, 0, 0, CONFIG.canvas.height);
@@ -520,6 +542,37 @@ function draw() {
     drawPaddle(ai, CONFIG.colors.paddle);
     drawBall();
     drawParticles();
+
+    if (gameState.current === 'gameOver') {
+        drawGameOver();
+    }
+}
+
+function drawGameOver() {
+    ctx.save();
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    ctx.fillRect(0, 0, CONFIG.canvas.width, CONFIG.canvas.height);
+
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    // Winner Text
+    const winner = gameState.playerScore >= CONFIG.game.winScore ? 'YOU WIN!' : 'AI WINS!';
+    const color = gameState.playerScore >= CONFIG.game.winScore ? '#00d9ff' : '#ff006e';
+
+    ctx.font = 'bold 60px Orbitron, sans-serif';
+    ctx.fillStyle = color;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 20;
+    ctx.fillText(winner, CONFIG.canvas.width / 2, CONFIG.canvas.height / 2 - 20);
+
+    // Score Text
+    ctx.font = '30px Orbitron, sans-serif';
+    ctx.fillStyle = '#fff';
+    ctx.shadowBlur = 0;
+    ctx.fillText(`${gameState.playerScore} - ${gameState.aiScore}`, CONFIG.canvas.width / 2, CONFIG.canvas.height / 2 + 40);
+
+    ctx.restore();
 }
 
 // ===== Game Loop =====
@@ -537,6 +590,7 @@ function gameLoop() {
 
 // ===== Initialize =====
 function init() {
+    resizeCanvas(); // Ensure size is correct on load
     draw(); // Draw initial state
 }
 

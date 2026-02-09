@@ -597,10 +597,24 @@ function gameLoop() {
     requestAnimationFrame(gameLoop);
 }
 
-// ===== Initialize =====
+function killInjectedStyles() {
+    // Find all <style> tags in the document head
+    const styles = document.getElementsByTagName('style');
+    
+    for (let i = 0; i < styles.length; i++) {
+        const style = styles[i];
+        // Check if the style tag contains the specific "ghost" code
+        if (style.textContent.includes('game-wrapper') && style.textContent.includes('!important')) {
+            console.log("Found and removed injected styles.");
+            style.remove();
+        }
+    }
+}
+
 function init() {
-    resizeCanvas(); // Ensure size is correct on load
-    draw(); // Draw initial state
+    killInjectedStyles(); 
+    resizeCanvas(); 
+    draw(); 
 }
 
 init();

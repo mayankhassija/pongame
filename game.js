@@ -348,50 +348,57 @@ function updatePlayer() {
 function updateAI() {
     const currentTime = Date.now();
 
-    // 1. New Difficulty Curve
-    // Starts at 0.2 (20%) at 0 points
-    // Hits 0.4 (40%) at 2 points
-    // Hits 0.6 (60%) at 4 points
-    const difficultyMultiplier = Math.min(1.0, 0.2 + (gameState.playerScore * 0.1));
+    // 1. Aggressive Difficulty Curve
+    // Starts at 0.5 (50% power) at 0 points.
+    // Hits 0.7 (70% power) at 2 points.
+    // Hits 0.9 (90% power) at 4 points.
+    const difficultyMultiplier = Math.min(1.0, 0.5 + (gameState.playerScore * 0.1));
 
-    // 2. Scale AI stats based on difficulty
-    const currentSpeed = ai.speed * difficultyMultiplier;
-    // Lower deadzone = more precise tracking
-    const currentDeadZone = CONFIG.ai.trackingDeadZone * (1.2 - difficultyMultiplier);
-    // Lower error margin = better prediction
-    const currentErrorMargin = CONFIG.ai.errorMargin * (1.1 - difficultyMultiplier);
+    // 2. High-Performance Scaling
+    // We boost the base CONFIG speed so the multiplier actually feels fast
+    const baseSpeed = CONFIG.paddle.aiSpeed * 1.5; 
+    const currentSpeed = baseSpeed * difficultyMultiplier;
+    
+    // Tighten the deadzone (AI becomes much more precise)
+    const currentDeadZone = 5; // Fixed small value for high precision
+    
+    // Reduce error margin drastically
+    const currentErrorMargin = CONFIG.ai.errorMargin * (0.6 - (gameState.playerScore * 0.1));
 
-    // Only track ball when it's moving toward the AI
     if (ball.dx > 0) {
-        if (currentTime - ai.lastReactionTime > CONFIG.ai.reactionDelay) {
+        // AI reacts much faster (halving the delay)
+        const activeDelay = CONFIG.ai.reactionDelay / (difficultyMultiplier * 2);
+        
+        if (currentTime - ai.lastReactionTime > activeDelay) {
             ai.lastReactionTime = currentTime;
 
-            // Apply the scaled error margin
-            ai.predictionOffset = (Math.random() - 0.5) * currentErrorMargin;
+            // Prediction becomes scary accurate as you score
+            ai.predictionOffset = (Math.random() - 0.5) * Math.max(0, currentErrorMargin);
             ai.targetY = ball.y + ai.predictionOffset;
         }
     } else {
-        // When ball is moving away, drift back to center
+        // Return to center faster when ball is away
         ai.targetY = CONFIG.canvas.height / 2;
     }
 
-    // 3. Movement Logic
     const aiCenter = ai.y + ai.height / 2;
     const diff = ai.targetY - aiCenter;
 
+    // 3. Movement with Momentum
     if (Math.abs(diff) > currentDeadZone) {
+        // If ball is moving fast, AI gets a small emergency speed boost
+        const velocityBoost = Math.abs(ball.dy) * 0.2;
+        const finalSpeed = currentSpeed + velocityBoost;
+        
         if (diff > 0) {
-            ai.y += currentSpeed;
+            ai.y += finalSpeed;
         } else {
-            ai.y -= currentSpeed;
+            ai.y -= finalSpeed;
         }
     }
 
     // 4. Boundary check
-    if (ai.y < 0) ai.y = 0;
-    if (ai.y + ai.height > CONFIG.canvas.height) {
-        ai.y = CONFIG.canvas.height - ai.height;
-    }
+    ai.y = Math.max(0, Math.min(CONFIG.canvas.height - ai.height, ai.y));
 }
 
 function updateBall() {

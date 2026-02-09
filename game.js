@@ -348,15 +348,16 @@ function updatePlayer() {
 function updateAI() {
     const currentTime = Date.now();
 
-    // 1. Calculate Difficulty Multiplier
-    // 0 points = 0.1 (10%), 1 point = 0.2, ..., 4 points = 0.5
-    // We use Math.min to cap it if you decide to play past 5 points
-    const difficultyMultiplier = Math.min(1.0, (gameState.playerScore + 1) * 0.1);
+    // 1. New Difficulty Curve
+    // Starts at 0.2 (20%) at 0 points
+    // Hits 0.4 (40%) at 2 points
+    // Hits 0.6 (60%) at 4 points
+    const difficultyMultiplier = Math.min(1.0, 0.2 + (gameState.playerScore * 0.1));
 
     // 2. Scale AI stats based on difficulty
     const currentSpeed = ai.speed * difficultyMultiplier;
     // Lower deadzone = more precise tracking
-    const currentDeadZone = CONFIG.ai.trackingDeadZone * (1.5 - difficultyMultiplier);
+    const currentDeadZone = CONFIG.ai.trackingDeadZone * (1.2 - difficultyMultiplier);
     // Lower error margin = better prediction
     const currentErrorMargin = CONFIG.ai.errorMargin * (1.1 - difficultyMultiplier);
 

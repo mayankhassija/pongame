@@ -191,6 +191,9 @@ html body .game-wrapper {
     flex-direction: column !important;
     max-width: 100% !important;
     background: rgba(0, 0, 0, 0.5) !important;
+    overflow: hidden !important; 
+    display: flex !important;
+    flex-direction: column !important;
 }
 
 /* 3. Ensure the canvas doesn't get shrunk by the 95vw/vh injection */

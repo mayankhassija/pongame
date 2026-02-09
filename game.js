@@ -348,36 +348,45 @@ function updatePlayer() {
 function updateAI() {
     const currentTime = Date.now();
 
-    // Only track ball when it's moving toward the AI (positive dx)
+    // 1. Calculate Difficulty Multiplier
+    // 0 points = 0.1 (10%), 1 point = 0.2, ..., 4 points = 0.5
+    // We use Math.min to cap it if you decide to play past 5 points
+    const difficultyMultiplier = Math.min(1.0, (gameState.playerScore + 1) * 0.1);
+
+    // 2. Scale AI stats based on difficulty
+    const currentSpeed = ai.speed * difficultyMultiplier;
+    // Lower deadzone = more precise tracking
+    const currentDeadZone = CONFIG.ai.trackingDeadZone * (1.5 - difficultyMultiplier);
+    // Lower error margin = better prediction
+    const currentErrorMargin = CONFIG.ai.errorMargin * (1.1 - difficultyMultiplier);
+
+    // Only track ball when it's moving toward the AI
     if (ball.dx > 0) {
-        // Check if enough time has passed since last reaction (reaction delay)
         if (currentTime - ai.lastReactionTime > CONFIG.ai.reactionDelay) {
             ai.lastReactionTime = currentTime;
 
-            // Add some random prediction error
-            ai.predictionOffset = (Math.random() - 0.5) * CONFIG.ai.errorMargin;
-
-            // Set target position with error
+            // Apply the scaled error margin
+            ai.predictionOffset = (Math.random() - 0.5) * currentErrorMargin;
             ai.targetY = ball.y + ai.predictionOffset;
         }
     } else {
-        // When ball is moving away, slowly return to center
+        // When ball is moving away, drift back to center
         ai.targetY = CONFIG.canvas.height / 2;
     }
 
-    // Move toward target position with dead zone
+    // 3. Movement Logic
     const aiCenter = ai.y + ai.height / 2;
     const diff = ai.targetY - aiCenter;
 
-    if (Math.abs(diff) > CONFIG.ai.trackingDeadZone) {
+    if (Math.abs(diff) > currentDeadZone) {
         if (diff > 0) {
-            ai.y += ai.speed;
+            ai.y += currentSpeed;
         } else {
-            ai.y -= ai.speed;
+            ai.y -= currentSpeed;
         }
     }
 
-    // Boundary check
+    // 4. Boundary check
     if (ai.y < 0) ai.y = 0;
     if (ai.y + ai.height > CONFIG.canvas.height) {
         ai.y = CONFIG.canvas.height - ai.height;

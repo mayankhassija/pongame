@@ -195,9 +195,45 @@ header {
     transform: translateY(1px);
 }
 
+/* ===== Override Injected Portfolio Styles ===== */
+
+/* 1. Reset the body to your intended layout */
+html body {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    overflow: hidden !important;
+    background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%) !important;
+}
+
+/* 2. Reset the wrapper to match your local design */
+html body .game-wrapper {
+    position: relative !important; /* Forces it back from 'absolute' */
+    top: auto !important;
+    left: auto !important;
+    transform: none !important;
+    width: 100% !important;
+    height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    max-width: 100% !important;
+    background: rgba(0, 0, 0, 0.5) !important;
+}
+
+/* 3. Ensure the canvas doesn't get shrunk by the 95vw/vh injection */
+html body #gameCanvas {
+    max-width: 100% !important;
+    max-height: 100% !important;
+    width: 100% !important;
+    height: auto !important;
+    box-shadow: none !important; /* Removes the injected green glow */
+    image-rendering: auto !important; /* Or 'pixelated' if you prefer */
+}
 /* ===== Responsive Design ===== */
 @media (max-width: 768px) {
     .container {
         padding: var(--spacing-sm);
     }
 } 
+
+

@@ -306,7 +306,16 @@ function gameOver(winner) {
 function resetBall() {
     ball.x = CONFIG.canvas.width / 2;
     ball.y = CONFIG.canvas.height / 2;
-    ball.speed = CONFIG.ball.initialSpeed;
+
+    // --- SPEED INCREASE LOGIC ---
+    // Calculate new speed: Initial Speed + (0.5 * Player Score)
+    // Math.min ensures it never exceeds the maximum speed limit defined in CONFIG
+    const speedIncreasePerPoint = 0.5; 
+    
+    ball.speed = Math.min(
+        CONFIG.ball.initialSpeed + (gameState.playerScore * speedIncreasePerPoint), 
+        CONFIG.ball.maxSpeed
+    );
 
     // Random direction
     const angle = (Math.random() * Math.PI / 3) - Math.PI / 6; // -30 to 30 degrees

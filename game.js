@@ -357,46 +357,50 @@ function updatePlayer() {
 function updateAI() {
     const currentTime = Date.now();
 
-    // 1. Aggressive Difficulty Curve
-    // Starts at 0.5 (50% power) at 0 points.
-    // Hits 0.7 (70% power) at 2 points.
-    // Hits 0.9 (90% power) at 4 points.
-    const difficultyMultiplier = Math.min(1.0, 0.5 + (gameState.playerScore * 0.1));
+    // 1. Reduced Difficulty Curve
+    // Previously started at 0.5, now starts at 0.3 (30% power).
+    // Progression is slower (0.06 per point instead of 0.1).
+    // Caps at 0.8 (80%) instead of 1.0 (100%).
+    const difficultyMultiplier = Math.min(0.8, 0.3 + (gameState.playerScore * 0.06));
 
-    // 2. High-Performance Scaling
-    // We boost the base CONFIG speed so the multiplier actually feels fast
-    const baseSpeed = CONFIG.paddle.aiSpeed * 1.5; 
+    // 2. Reduced Speed Scaling
+    // Removed the previous 1.5x multiplier. Now runs at 90% of config speed.
+    const baseSpeed = CONFIG.paddle.aiSpeed * 0.9; 
     const currentSpeed = baseSpeed * difficultyMultiplier;
     
-    // Tighten the deadzone (AI becomes much more precise)
-    const currentDeadZone = 5; // Fixed small value for high precision
+    // 3. Loosened Precision
+    // Increased deadzone from 5 to 20. 
+    // AI will stop moving if it's "close enough," leading to more edge hits or misses.
+    const currentDeadZone = 20; 
     
-    // Reduce error margin drastically
-    const currentErrorMargin = CONFIG.ai.errorMargin * (0.6 - (gameState.playerScore * 0.1));
+    // 4. Widen Error Margin
+    // Previously shrank to almost 0. Now keeps a healthy margin of error.
+    const currentErrorMargin = CONFIG.ai.errorMargin * (1.0 - (gameState.playerScore * 0.05));
 
     if (ball.dx > 0) {
-        // AI reacts much faster (halving the delay)
-        const activeDelay = CONFIG.ai.reactionDelay / (difficultyMultiplier * 2);
+        // AI Reaction Delay logic
+        // Reduced the divisor so the resulting delay is larger (slower reaction)
+        const activeDelay = CONFIG.ai.reactionDelay / (difficultyMultiplier * 1.2);
         
         if (currentTime - ai.lastReactionTime > activeDelay) {
             ai.lastReactionTime = currentTime;
 
-            // Prediction becomes scary accurate as you score
-            ai.predictionOffset = (Math.random() - 0.5) * Math.max(0, currentErrorMargin);
+            // Prediction allows for more error now
+            ai.predictionOffset = (Math.random() - 0.5) * Math.max(10, currentErrorMargin);
             ai.targetY = ball.y + ai.predictionOffset;
         }
     } else {
-        // Return to center faster when ball is away
+        // Return to center slower when ball is away
         ai.targetY = CONFIG.canvas.height / 2;
     }
 
     const aiCenter = ai.y + ai.height / 2;
     const diff = ai.targetY - aiCenter;
 
-    // 3. Movement with Momentum
+    // 5. Movement Logic
     if (Math.abs(diff) > currentDeadZone) {
-        // If ball is moving fast, AI gets a small emergency speed boost
-        const velocityBoost = Math.abs(ball.dy) * 0.2;
+        // Reduced the emergency velocity boost from 0.2 to 0.1
+        const velocityBoost = Math.abs(ball.dy) * 0.1;
         const finalSpeed = currentSpeed + velocityBoost;
         
         if (diff > 0) {
@@ -406,7 +410,7 @@ function updateAI() {
         }
     }
 
-    // 4. Boundary check
+    // Boundary check
     ai.y = Math.max(0, Math.min(CONFIG.canvas.height - ai.height, ai.y));
 }
 

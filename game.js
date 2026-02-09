@@ -43,20 +43,29 @@ const ctx = canvas.getContext('2d');
 function resizeCanvas() {
     const rect = canvas.getBoundingClientRect();
 
-    // Update internal dimensions
+    // 1. Update internal dimensions
     canvas.width = rect.width;
     canvas.height = rect.height;
-
     CONFIG.canvas.width = canvas.width;
     CONFIG.canvas.height = canvas.height;
 
-    // 1. Reposition paddles horizontally
-    player.x = 30; // Stay on left
-    ai.x = CONFIG.canvas.width - 30 - CONFIG.paddle.width; // Anchor to new right edge
+    // 2. CALCULATE DYNAMIC PADDLE SIZE
+    // Height: 15% of canvas height (clamped between 60px and 140px)
+    CONFIG.paddle.height = Math.max(60, Math.min(canvas.height * 0.15, 140));
+    
+    // Width: 1.5% of canvas width (clamped between 10px and 20px)
+    CONFIG.paddle.width = Math.max(10, Math.min(canvas.width * 0.015, 20));
 
-    // 2. Centering Logic
+    // Apply new sizes to the objects
+    player.height = ai.height = CONFIG.paddle.height;
+    player.width = ai.width = CONFIG.paddle.width;
+
+    // 3. Reposition paddles horizontally
+    player.x = 30; 
+    ai.x = CONFIG.canvas.width - 30 - player.width; 
+
+    // 4. Centering / Boundary Logic
     if (gameState.current === 'start' || gameState.current === 'gameOver') {
-        // Full reset to center if game isn't active
         player.y = CONFIG.canvas.height / 2 - player.height / 2;
         ai.y = CONFIG.canvas.height / 2 - ai.height / 2;
         
@@ -67,14 +76,13 @@ function resizeCanvas() {
         player.y = Math.max(0, Math.min(player.y, CONFIG.canvas.height - player.height));
         ai.y = Math.max(0, Math.min(ai.y, CONFIG.canvas.height - ai.height));
         
-        // Clamp ball so it doesn't get stuck outside bounds on shrink
         ball.x = Math.max(ball.size, Math.min(ball.x, CONFIG.canvas.width - ball.size));
         ball.y = Math.max(ball.size, Math.min(ball.y, CONFIG.canvas.height - ball.size));
     }
 
-    // 3. Redraw immediately so it doesn't flicker/go blank
     draw();
 }
+
 window.addEventListener('resize', resizeCanvas);
 // Initial resize called in init
 

@@ -43,30 +43,38 @@ const ctx = canvas.getContext('2d');
 function resizeCanvas() {
     const rect = canvas.getBoundingClientRect();
 
+    // Update internal dimensions
     canvas.width = rect.width;
     canvas.height = rect.height;
 
     CONFIG.canvas.width = canvas.width;
     CONFIG.canvas.height = canvas.height;
 
-    // 1. Reposition paddles
-    ai.x = CONFIG.canvas.width - 30 - CONFIG.paddle.width;
-    ai.y = Math.min(ai.y, CONFIG.canvas.height - ai.height);
-    player.y = Math.min(player.y, CONFIG.canvas.height - player.height);
+    // 1. Reposition paddles horizontally
+    player.x = 30; // Stay on left
+    ai.x = CONFIG.canvas.width - 30 - CONFIG.paddle.width; // Anchor to new right edge
 
-    // 2. Reposition ball
-    if (gameState.current === 'start') {
+    // 2. Centering Logic
+    if (gameState.current === 'start' || gameState.current === 'gameOver') {
+        // Full reset to center if game isn't active
+        player.y = CONFIG.canvas.height / 2 - player.height / 2;
+        ai.y = CONFIG.canvas.height / 2 - ai.height / 2;
+        
         ball.x = CONFIG.canvas.width / 2;
         ball.y = CONFIG.canvas.height / 2;
     } else {
+        // Keep paddles within bounds if game is mid-play
+        player.y = Math.max(0, Math.min(player.y, CONFIG.canvas.height - player.height));
+        ai.y = Math.max(0, Math.min(ai.y, CONFIG.canvas.height - ai.height));
+        
+        // Clamp ball so it doesn't get stuck outside bounds on shrink
         ball.x = Math.max(ball.size, Math.min(ball.x, CONFIG.canvas.width - ball.size));
         ball.y = Math.max(ball.size, Math.min(ball.y, CONFIG.canvas.height - ball.size));
     }
 
-    // 3. Redraw immediately
+    // 3. Redraw immediately so it doesn't flicker/go blank
     draw();
 }
-
 window.addEventListener('resize', resizeCanvas);
 // Initial resize called in init
 

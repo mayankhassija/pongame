@@ -281,7 +281,7 @@ function restartGame() {
     gameState.current = 'start';
     gameState.playerScore = 0;
     gameState.aiScore = 0;
-
+    updateScoreDisplay();
     // Reset positions
     player.y = CONFIG.canvas.height / 2 - CONFIG.paddle.height / 2;
     ai.y = CONFIG.canvas.height / 2 - CONFIG.paddle.height / 2;

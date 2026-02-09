@@ -41,9 +41,6 @@ const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
 function resizeCanvas() {
-    // 1. Get the layout size (CSS size)
-    // We need to ensure the canvas attributes match the CSS size to avoid scaling 
-    // and to ensure the coordinate system matches the visible area.
     const rect = canvas.getBoundingClientRect();
 
     canvas.width = rect.width;
@@ -52,10 +49,22 @@ function resizeCanvas() {
     CONFIG.canvas.width = canvas.width;
     CONFIG.canvas.height = canvas.height;
 
-    // Reposition AI on resize
+    // 1. Reposition paddles
     ai.x = CONFIG.canvas.width - 30 - CONFIG.paddle.width;
     ai.y = Math.min(ai.y, CONFIG.canvas.height - ai.height);
     player.y = Math.min(player.y, CONFIG.canvas.height - player.height);
+
+    // 2. Reposition ball
+    if (gameState.current === 'start') {
+        ball.x = CONFIG.canvas.width / 2;
+        ball.y = CONFIG.canvas.height / 2;
+    } else {
+        ball.x = Math.max(ball.size, Math.min(ball.x, CONFIG.canvas.width - ball.size));
+        ball.y = Math.max(ball.size, Math.min(ball.y, CONFIG.canvas.height - ball.size));
+    }
+
+    // 3. Redraw immediately
+    draw();
 }
 
 window.addEventListener('resize', resizeCanvas);
